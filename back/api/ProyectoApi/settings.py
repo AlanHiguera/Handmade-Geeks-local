@@ -69,6 +69,8 @@ INSTALLED_APPS = [
     'api.apps.ApiConfig',
     'corsheaders',
     'rest_framework.authtoken',
+    'cloudinary_storage',  # ⚠️ DEBE ir ANTES de cloudinary
+    'cloudinary',
 ]
 
 TEMPLATES = [
@@ -108,7 +110,21 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Configuración de media (almacenamiento local de imágenes)
+# Cloudinary como almacenamiento por defecto
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+# Configuración específica para Cloudinary (agregar después de DEFAULT_FILE_STORAGE)
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default='daoh4s28m'),
+    'API_KEY': config('CLOUDINARY_API_KEY', default='326853185835764'),
+    'API_SECRET': config('CLOUDINARY_API_SECRET', default='6hVSf0n-X0fbqufXoifUdCkLfqQ'),
+}
+
+# Forzar uso de Cloudinary en producción
+if 'RENDER' in os.environ:
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+# Configuración de media (para desarrollo local)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 

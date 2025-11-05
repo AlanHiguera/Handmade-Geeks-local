@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:appflutter/services/productos/api_crear_producto.dart';
 import 'package:appflutter/services/tienda/api_tienda_por_propietario.dart';
+import 'dart:html' as html;
 
 class PublicarProducto extends StatefulWidget {
   const PublicarProducto({super.key});
@@ -31,11 +32,7 @@ class _PublicarProductoState extends State<PublicarProducto> {
   String? _nombreImagen;
   final ImagePicker _picker = ImagePicker();
 
-  final List<String> _categorias = [
-    'Lana',
-    'Ropa',
-    'Arcilla',
-  ];
+  final List<String> _categorias = ['Lana', 'Ropa', 'Arcilla'];
 
   @override
   void initState() {
@@ -46,10 +43,13 @@ class _PublicarProductoState extends State<PublicarProducto> {
   Future<void> _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _usuarioId = prefs.getInt('usuario_id');
-    
+
     if (_usuarioId != null) {
       // Obtener el ID de la tienda del usuario
-      final tienda = await APIObtenerTiendaPorPropietario.obtenerTiendaPorPropietario(_usuarioId!);
+      final tienda =
+          await APIObtenerTiendaPorPropietario.obtenerTiendaPorPropietario(
+            _usuarioId!,
+          );
       if (tienda != null && tienda.id != null) {
         setState(() {
           _tiendaId = tienda.id;
@@ -60,24 +60,38 @@ class _PublicarProductoState extends State<PublicarProducto> {
 
   Future<void> _seleccionarImagen() async {
     try {
-      final XFile? imagen = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1800,
-        maxHeight: 1800,
-        imageQuality: 85,
-      );
-      
-      if (imagen != null) {
-        if (kIsWeb) {
-          // Para Flutter Web, usar bytes
-          final bytes = await imagen.readAsBytes();
-          setState(() {
-            _imagenBytes = bytes;
-            _nombreImagen = imagen.name;
-            _imagenSeleccionada = null; // Limpiar el File para evitar errores
-          });
-        } else {
-          // Para móvil, usar File
+      if (kIsWeb) {
+        // Para Flutter Web, usar dart:html directamente
+        final html.FileUploadInputElement uploadInput =
+            html.FileUploadInputElement();
+        uploadInput.accept = 'image/*';
+        uploadInput.click();
+
+        uploadInput.onChange.listen((e) async {
+          final files = uploadInput.files;
+          if (files != null && files.isNotEmpty) {
+            final html.File file = files[0];
+            final reader = html.FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.onLoadEnd.listen((e) {
+              setState(() {
+                _imagenBytes = reader.result as Uint8List;
+                _nombreImagen = file.name;
+                _imagenSeleccionada = null;
+              });
+            });
+          }
+        });
+      } else {
+        // Para móvil, usar image_picker
+        final XFile? imagen = await _picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1800,
+          maxHeight: 1800,
+          imageQuality: 85,
+        );
+
+        if (imagen != null) {
           setState(() {
             _imagenSeleccionada = File(imagen.path);
             _imagenBytes = null;
@@ -93,7 +107,8 @@ class _PublicarProductoState extends State<PublicarProducto> {
   }
 
   bool _tieneImagen() {
-    return (kIsWeb && _imagenBytes != null) || (!kIsWeb && _imagenSeleccionada != null);
+    return (kIsWeb && _imagenBytes != null) ||
+        (!kIsWeb && _imagenSeleccionada != null);
   }
 
   Widget _construirImagen() {
@@ -126,7 +141,9 @@ class _PublicarProductoState extends State<PublicarProducto> {
     if (_formKey.currentState?.validate() ?? false) {
       if (_tiendaId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: No se pudo obtener el ID de la tienda')),
+          const SnackBar(
+            content: Text('Error: No se pudo obtener el ID de la tienda'),
+          ),
         );
         return;
       }
@@ -150,9 +167,13 @@ class _PublicarProductoState extends State<PublicarProducto> {
 
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('¡Producto creado exitosamente! Será revisado por un administrador antes de ser publicado.')),
+            const SnackBar(
+              content: Text(
+                '¡Producto creado exitosamente! Será revisado por un administrador antes de ser publicado.',
+              ),
+            ),
           );
-          
+
           // Limpiar formulario
           _nombreController.clear();
           _descripcionController.clear();
@@ -166,13 +187,15 @@ class _PublicarProductoState extends State<PublicarProducto> {
           });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error al crear el producto. Inténtalo de nuevo.')),
+            const SnackBar(
+              content: Text('Error al crear el producto. Inténtalo de nuevo.'),
+            ),
           );
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       } finally {
         setState(() {
           _isLoading = false;
@@ -215,24 +238,29 @@ class _PublicarProductoState extends State<PublicarProducto> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.grey),
                   ),
-                  child: _tieneImagen()
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: _construirImagen(),
-                        )
-                      : const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_photo_alternate, size: 50, color: Colors.grey),
-                              SizedBox(height: 8),
-                              Text(
-                                'Toca para seleccionar imagen',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ],
+                  child:
+                      _tieneImagen()
+                          ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: _construirImagen(),
+                          )
+                          : const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_photo_alternate,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Toca para seleccionar imagen',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -259,7 +287,9 @@ class _PublicarProductoState extends State<PublicarProducto> {
 
               TextFormField(
                 controller: _precioController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Precio',
                   prefixText: '\$ ',
@@ -300,9 +330,13 @@ class _PublicarProductoState extends State<PublicarProducto> {
                   labelText: 'Categoría',
                   border: OutlineInputBorder(),
                 ),
-                items: _categorias
-                    .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-                    .toList(),
+                items:
+                    _categorias
+                        .map(
+                          (cat) =>
+                              DropdownMenuItem(value: cat, child: Text(cat)),
+                        )
+                        .toList(),
                 onChanged: (value) {
                   setState(() {
                     _categoriaSeleccionada = value;
@@ -321,16 +355,22 @@ class _PublicarProductoState extends State<PublicarProducto> {
                 onPressed: _isLoading ? null : _confirmar,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  child:
+                      _isLoading
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                          : const Text(
+                            'Confirmar',
+                            style: TextStyle(fontSize: 16),
                           ),
-                        )
-                      : const Text('Confirmar', style: TextStyle(fontSize: 16)),
                 ),
               ),
             ],

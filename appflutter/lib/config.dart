@@ -1,10 +1,10 @@
 class Config {
   static const String appName = "Handmade Geeks";
-  static const String apiURL = 'hgeeks-backend.onrender.com';
+  static const String apiURL = 'http://127.0.0.1:8000';
 
   // Función helper para construir URLs completas con debugging
   static String buildUrl(String endpoint) {
-    final url = 'https://$apiURL/$endpoint';
+    final url = '$apiURL/$endpoint'; // ❌ Removido 'https://'
     return url;
   }
 
@@ -13,8 +13,9 @@ class Config {
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
-    String cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-    final url = 'https://$apiURL/$cleanPath';
+    String cleanPath =
+        imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+    final url = '$apiURL/$cleanPath'; // ❌ Removido 'https://'
     print('🖼️ [CONFIG] URL de imagen construida: $url');
     return url;
   }

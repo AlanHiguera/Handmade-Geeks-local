@@ -50,16 +50,11 @@ else:
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'HOST': 'ingedb.mysql.database.azure.com',
-        'PORT': '3306',
-        'USER': 'inge',
-        'PASSWORD': 'Shar1ngan',
-        'NAME': 'hgeeks',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'ssl_mode': 'REQUIRED',
-            'ssl': {} if 'RENDER' in os.environ else {},
-        }
+        'NAME': 'hglocal',  # Nombre de la base de datos local
+        'USER': 'root',                  # Usuario de MySQL local
+        'PASSWORD': 'mysqlins',     # Contraseña de MySQL local
+        'HOST': '127.0.0.1',             # Host local
+        'PORT': '3306',                  # Puerto de MySQL local
     }
 }
 
@@ -74,8 +69,6 @@ INSTALLED_APPS = [
     'api.apps.ApiConfig',
     'corsheaders',
     'rest_framework.authtoken',
-    'cloudinary_storage',  # ⚠️ DEBE ir ANTES de cloudinary
-    'cloudinary',
 ]
 
 TEMPLATES = [
@@ -115,21 +108,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Cloudinary como almacenamiento por defecto
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-
-# Configuración específica para Cloudinary (agregar después de DEFAULT_FILE_STORAGE)
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default='devfncp85'),
-    'API_KEY': config('CLOUDINARY_API_KEY', default='498194629494134'),
-    'API_SECRET': config('CLOUDINARY_API_SECRET', default='_EhddXk2IJtd7bjU8ZTuCusdN0Y'),
-}
-
-# Forzar uso de Cloudinary en producción
-if 'RENDER' in os.environ:
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-
-# Configuración de media (para desarrollo local)
+# Configuración de media (almacenamiento local de imágenes)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 

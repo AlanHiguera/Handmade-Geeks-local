@@ -1,9 +1,9 @@
-import 'package:appflutter/pages/Sesion/login.dart';
+import 'package:appflutter/pages/sesion/login.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Tienda/MiTienda.dart';
 import '../Tienda/CrearTienda.dart';
-import '../Seguidos/Seguidos.dart';
+import '../seguidos/Seguidos.dart';
 import '../Deseados/Deseados.dart';
 import 'package:appflutter/services/usuario/api_perfil.dart';
 import 'package:appflutter/services/tienda/api_tienda_por_propietario.dart';

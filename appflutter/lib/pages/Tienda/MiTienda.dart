@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:appflutter/pages/Producto/detalle_producto.dart';
-import 'package:appflutter/pages/Producto/Publicarproducto.dart';
+import 'package:appflutter/pages/Producto/PublicarProducto.dart';
 import 'package:appflutter/services/tienda/api_detalle_tienda.dart';
 import 'package:appflutter/services/productos/api_productos_x_tienda.dart';
 import 'package:appflutter/services/tienda/api_tienda_por_propietario.dart';
